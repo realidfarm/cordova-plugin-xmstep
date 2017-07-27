@@ -36,7 +36,7 @@ public class Rfid extends CordovaPlugin implements DFRfid {
 
     public static String cardids = ""; 
 
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
         Activity activity = this.cordova.getActivity();
         if (action.equals("openDevice")) {
             if(isOpen == true){
@@ -63,7 +63,12 @@ public class Rfid extends CordovaPlugin implements DFRfid {
                 public void onScanCycleDataReceived(String cardID) {
                     synchronized (this) {
                         // 处理获取数据
-                        cardids = cardID;
+                        if(cardID != "" && cardID != null){
+                          Sound.callAlarm(cordova.getActivity());
+                          PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, cardID);
+                          pluginResult.setKeepCallback(true);
+                          callbackContext.sendPluginResult(pluginResult);
+                        }
                     }
                 }
 
@@ -78,11 +83,6 @@ public class Rfid extends CordovaPlugin implements DFRfid {
                     // TODO 获取是否标签为离开状态
                 }
             });
-            callbackContext.success(cardids);
-            if(cardids != ""){
-                Sound.callAlarm(cordova.getActivity());
-            }
-            cardids = "";
             return true;
         }else if(action.equals("scanCycleStop")) {
             boolean scan = scanCycleStop();
@@ -222,29 +222,7 @@ public class Rfid extends CordovaPlugin implements DFRfid {
                             byte[] cardIDBytes = new byte[pLen];
                             System.arraycopy(data, 18, cardIDBytes, 0,
                                     cardIDBytes.length);
-
-                            //System.arraycopy(data, 18, tagno, 0, tagno.length);
-                            tagno = new ISO11784(byteArrayToLong(cardIDBytes,2,false));
-                            //步数
-                            step = toUInt32(cardIDBytes, 12, false);
-
-                            //温度
-                            if(cardIDBytes[16]==0x22){
-                              if(cardIDBytes[17] < 0){
-                                temp = cardIDBytes[17] + 256;
-                              }else{
-                                temp = cardIDBytes[17];
-                              }
-                              if(cardIDBytes[18] < 0){
-                                temp = cardIDBytes[18] + 256 + temp*256;
-                              }else{
-                                temp = cardIDBytes[18] + temp*256;
-                              }
-                              if(temp > 30000){
-                                temp = temp - 65536;
-                              }
-                            }
-                            String cardID = new String(tagno.toString() + "|" + step + "|" + temp);
+                            String cardID = new String(cardIDBytes);
                             if (!cardID.startsWith("NOTAG")) {
                                 scanCycleDataReceiver
                                         .onScanCycleDataReceived(cardID);
