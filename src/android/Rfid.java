@@ -200,6 +200,8 @@ public class Rfid extends CordovaPlugin implements DFRfid {
     }
 
     private void print(String dataStr) {
+        ISO11784 tagno;
+        long step = 0;
         if (!TextUtils.isEmpty(dataStr)) {
             if (scanCycleDataReceiver != null) {
                 byte[] data = Text.hexString2Bytes(dataStr);
@@ -223,7 +225,11 @@ public class Rfid extends CordovaPlugin implements DFRfid {
                             byte[] cardIDBytes = new byte[pLen];
                             System.arraycopy(data, 18, cardIDBytes, 0,
                                     cardIDBytes.length);
-                            String cardID = new String(cardIDBytes);
+
+                            tagno = new ISO11784(byteArrayToLong(cardIDBytes,2,false));
+                            //步数
+                            step = toUInt32(cardIDBytes, 12, false);
+                            String cardID = new String(tagno.toString() + "|" + step);
                             if (!cardID.startsWith("NOTAG")) {
                                 scanCycleDataReceiver
                                         .onScanCycleDataReceived(cardID);
