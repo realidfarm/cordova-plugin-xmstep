@@ -40,6 +40,7 @@ public class Rfid extends CordovaPlugin implements DFRfid {
     public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
         Activity activity = this.cordova.getActivity();
         if (action.equals("openDevice")) {
+			Power.on();
             if(isOpen == true){
                 callbackContext.success("设备已开启");
             }else{
